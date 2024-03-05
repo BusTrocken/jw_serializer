@@ -1,6 +1,25 @@
 package de.serializer;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
+
 public class ByteConverter {
+
+    public static Map<Class<?>, Function<byte[],?>> getConverterMap() {
+        Map<Class<?>, Function<byte[],?>> map = new HashMap<>();
+
+        map.put(Boolean.class, ByteConverter::toBoolean);
+        map.put(Byte.class, bytes -> bytes[0]);
+        map.put(Short.class, ByteConverter::toShort);
+        map.put(Character.class, ByteConverter::toChar);
+        map.put(Integer.class, ByteConverter::toInt);
+        map.put(Long.class, ByteConverter::toLong);
+        map.put(Float.class, ByteConverter::toFloat);
+        map.put(Double.class, ByteConverter::toDouble);
+
+        return map;
+    }
 
     public static byte[] toByta(byte data) {
         return new byte[]{data};

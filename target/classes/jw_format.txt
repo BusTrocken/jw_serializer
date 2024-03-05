@@ -1,3 +1,1 @@
 ++00 4B Magic number
-++04 1B Version number
-++05 4B Length of data

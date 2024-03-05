@@ -1,4 +1,4 @@
 package de.serializer;
 
 
-public record Street(String name, int houseNumber) { }
+public record Street(String name, float houseNumber) { }

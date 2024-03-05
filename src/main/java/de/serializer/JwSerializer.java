@@ -1,50 +1,55 @@
 package de.serializer;
 
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Map;
 
-public class JwSerializer<T> {
+public class JwSerializer {
 
-    private static final String HEX_FORMAT_STRING = "%02X";
+    private BufferedOutputStream writer;
 
-    public void serialize(T value) throws IOException, IllegalAccessException {
+    public void serialize(Object value) throws IOException, IllegalAccessException {
         int magicNumber = MagicNumberProvider.getNextNumber();
 
-        Map<String, Object> fields = new PrimitiveFieldsLoader(value).load();
+        writer = new BufferedOutputStream(new FileOutputStream(magicNumber + ".bin"));
 
-        List<byte[]> byteArray = getAllByteArrays(fields);
+        byte[] magicNumberBytes = toByta(magicNumber);
+
+        writer.write(magicNumberBytes);
+        Map<String, Object> fields = new PrimitiveFieldsLoader().load(value);
+        writeFieldBytes(fields);
+
+        writer.close();
     }
 
-    private List<byte[]> getAllByteArrays(Map<String, Object> fields) {
-        StringBuilder binaryString = new StringBuilder();
+    private void writeFieldBytes(Map<String, Object> fields) throws IOException {
         for (String name : fields.keySet()) {
-            byte[] nameBytes = name.getBytes(StandardCharsets.UTF_8);
-            String nameBinary = toByteString(nameBytes);
-            byte length = (byte) nameBinary.length();
-            String nameLengthBinary = toBinaryString(length, (byte) 32);
+            writeStringAndItsLength(name);
 
+            Object value = fields.get(name);
+            byte typeByte = getTypeByte(value);
+            writer.write(typeByte);
 
-            binaryString.append(nameLengthBinary).append(nameBinary);
+            if (value.getClass() == String.class) {
+                writeStringAndItsLength((String) value);
+            } else {
+                writer.write(toByta(value));
+            }
         }
-
-        return null;
     }
 
-    private String toByteString(byte[] bytes) {
-        StringBuilder sb = new StringBuilder();
-        for (byte it : bytes) {
-            sb.append(toBinaryString(it, (byte) 8));
-        }
-        return sb.toString();
+    private void writeStringAndItsLength(String name) throws IOException {
+        byte[] nameBytes = name.getBytes(StandardCharsets.UTF_8);
+        byte[] length = toByta(nameBytes.length);
+        writer.write(length);
+        writer.write(nameBytes);
     }
 
-    private String toBinaryString(byte it, byte length) {
-        return String.format("%" + length + "s", Integer.toBinaryString(it & 0xFF)).replace(' ', '0');
+    private byte getTypeByte(Object o) {
+        return (byte) SerializableTypes.fromClass(o.getClass()).ordinal();
     }
 
-    private byte[] toByta(Object object) {
+    public static byte[] toByta(Object object) {
         if (object.getClass() == Byte.class) {
             return ByteConverter.toByta((Byte) object);
         }

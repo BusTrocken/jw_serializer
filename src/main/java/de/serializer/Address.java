@@ -1,3 +1,3 @@
 package de.serializer;
 
-public record Address(Street street, int houseNumber) {}
+public record Address(Street street, String city) {}
