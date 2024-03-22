@@ -44,19 +44,6 @@ public class PrimitiveFieldsLoader {
         return values;
     }
 
-    public Object getFilledObject(@NotNull Class<?> clazz) {
-        Object obj = getEmptyObject(clazz);
-        return null;
-    }
-
-    private Object getEmptyObject(@NotNull Class<?> clazz) {
-        try {
-            return clazz.getDeclaredConstructor().newInstance();
-        } catch (InstantiationException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private void getFlatFields(Object value, String parentName, TriConsumer<String, Object, Field> function) throws IllegalAccessException {
         Field[] firstLevelFields = value.getClass().getDeclaredFields();
         for (Field field : firstLevelFields) {
@@ -75,13 +62,5 @@ public class PrimitiveFieldsLoader {
         } else {
             function.accept(fieldName, value, field);
         }
-    }
-
-    private Object[] getAsArray(Field field, Object value) throws IllegalAccessException {
-        if (List.class.isAssignableFrom(field.getType())) {
-            field.setAccessible(true);
-            return ((List<?>)field.get(value)).toArray();
-        }
-        return null;
     }
 }

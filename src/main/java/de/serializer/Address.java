@@ -1,3 +1,16 @@
 package de.serializer;
 
-public record Address(Street street, String city) {}
+import lombok.Getter;
+
+@Getter
+public class Address {
+    private Street street;
+    private String city;
+
+    public Address(Street street, String city) {
+        this.street = street;
+        this.city = city;
+    }
+
+    private Address() {}
+}

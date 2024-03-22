@@ -1,12 +1,14 @@
 package de.serializer;
 
+import lombok.NoArgsConstructor;
+
 import java.util.Objects;
 
 public final class Customer {
-    private final String firstName;
-    private final String lastName;
-    private final long age;
-    private final Address address;
+    private String firstName;
+    private String lastName;
+    private long age;
+    private Address address;
 
     public Customer(String firstName, String lastName, long age, Address address) {
         this.firstName = firstName;
@@ -14,6 +16,8 @@ public final class Customer {
         this.age = age;
         this.address = address;
     }
+
+    private Customer() {}
 
     @Override
     public boolean equals(Object obj) {

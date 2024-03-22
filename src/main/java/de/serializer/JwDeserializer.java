@@ -1,33 +1,35 @@
 package de.serializer;
 
 import org.jetbrains.annotations.NotNull;
-import sun.reflect.ReflectionFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 
 public class JwDeserializer<T> {
 
     private static final Map<Class<?>, Function<byte[], ?>> converterMap = ByteConverter.getConverterMap();
 
-    private final Class<T> type;
+    private final Class<T> clazz;
     private int index = 4;
 
-    public JwDeserializer(@NotNull Class<T> type) {
-        this.type = type;
+    public JwDeserializer(@NotNull Class<T> clazz) {
+        this.clazz = clazz;
     }
 
-    public void deserialize(@NotNull String fileName) {
+    public T deserialize(@NotNull String fileName) {
         File file = new File(fileName);
         try (FileInputStream fis = new FileInputStream(file)) {
-            byte[] bytes = new byte[(int) file.length()];
-            fis.read(bytes);
-            T object = readObject(bytes);
+            byte[] bytes = fis.readAllBytes();
+            return readObject(bytes);
         } catch (IOException e) {
             throw new IllegalArgumentException(String.format("could not find file " + fileName));
         }
@@ -47,26 +49,55 @@ public class JwDeserializer<T> {
             }
         }
         try {
-            T instance = createInstance(fieldsAndValues);
-        } catch (NoSuchMethodException | InvocationTargetException | InstantiationException |
-                 IllegalAccessException e) {
+            return createInstance(fieldsAndValues);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException();
+        } catch (NoSuchFieldException | NoSuchMethodException | InvocationTargetException | InstantiationException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private T createInstance(Map<String, Object> fieldsAndValues) throws IllegalAccessException, NoSuchFieldException, NoSuchMethodException, InvocationTargetException, InstantiationException {
+        T instance = createEmptyInstance();
+
+        for (Field field : clazz.getDeclaredFields()) {
+            setField(fieldsAndValues, field, instance, "");
+        }
+
+        return instance;
+    }
+
+    private Object setField(Map<String, Object> fieldsAndValues, Field field, Object instance, String parentFieldName) throws IllegalAccessException, NoSuchMethodException, InvocationTargetException, InstantiationException {
+        field.setAccessible(true);
+        String currentFieldName = (!Objects.equals(parentFieldName, "")) ? parentFieldName + "." + field.getName() : field.getName();
+        if (SerializableTypes.isSerializableType(field.getType())) {
+            Object value = fieldsAndValues.get(currentFieldName);
+            field.set(instance, value);
+        } else {
+            Constructor<?> constructor = field.getType().getDeclaredConstructor();
+            constructor.setAccessible(true);
+            Object nestedInstance = constructor.newInstance();
+            for (Field nestedField : field.getType().getDeclaredFields()) {
+                field.set(instance,
+                        setField(fieldsAndValues,
+                                nestedField,
+                                nestedInstance,
+                                currentFieldName));
+            }
+            return instance;
         }
         return null;
     }
 
-    private T createInstance(Map<String, Object> fieldsAndValues) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        String[][] fields = new String[fieldsAndValues.size()][];
-        for (int i = 0; i < fieldsAndValues.size(); i++) {
-            fields[i] = getNameByIndex(fieldsAndValues, i).split("\\.");
+    private T createEmptyInstance() {
+        try {
+            Constructor<T> constructor = clazz.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            return constructor.newInstance();
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                 NoSuchMethodException e) {
+            throw new RuntimeException();
         }
-
-
-        ReflectionFactory rf = ReflectionFactory.getReflectionFactory();
-        Constructor objDef = type.getDeclaredConstructor();
-        Constructor intConstr = rf.newConstructorForSerialization(type, objDef);
-        type.cast(intConstr.newInstance());
-        return null;
     }
 
     private Object readValue(byte[] bytes, Class<?> clazz) {
@@ -90,9 +121,5 @@ public class JwDeserializer<T> {
             slicedBytes[i] = bytes[index++];
         }
         return slicedBytes;
-    }
-
-    private @NotNull String getNameByIndex(@NotNull Map<String, Object> fieldsAndValues, int index) {
-        return fieldsAndValues.keySet().toArray(new String[0])[index];
     }
 }

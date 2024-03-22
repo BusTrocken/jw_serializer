@@ -1,4 +1,16 @@
 package de.serializer;
 
+import lombok.Getter;
 
-public record Street(String name, float houseNumber) { }
+@Getter
+public class Street {
+    private String name;
+    private float houseNumber;
+
+    public Street(String name, float houseNumber) {
+        this.name = name;
+        this.houseNumber = houseNumber;
+    }
+
+    public Street() {}
+}
