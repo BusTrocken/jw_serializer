@@ -5,9 +5,9 @@ import lombok.Getter;
 @Getter
 public class Street {
     private String name;
-    private float houseNumber;
+    private int houseNumber;
 
-    public Street(String name, float houseNumber) {
+    public Street(String name, int houseNumber) {
         this.name = name;
         this.houseNumber = houseNumber;
     }

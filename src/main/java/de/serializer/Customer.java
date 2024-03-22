@@ -7,10 +7,10 @@ import java.util.Objects;
 public final class Customer {
     private String firstName;
     private String lastName;
-    private long age;
+    private int age;
     private Address address;
 
-    public Customer(String firstName, String lastName, long age, Address address) {
+    public Customer(String firstName, String lastName, int age, Address address) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.age = age;

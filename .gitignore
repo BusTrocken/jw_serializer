@@ -1,0 +1,17 @@
+target/
+!**/src/**/target
+
+# Eclipse
+.settings/
+.project
+.classpath
+.metadata/
+# IntelliJ
+.idea
+**/*.iml
+
+./mvn/maven-wrapper.jar
+
+.DS_Store
+
+.run/
