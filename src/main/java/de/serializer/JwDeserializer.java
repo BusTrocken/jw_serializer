@@ -86,7 +86,7 @@ public class JwDeserializer<T> {
             }
             return instance;
         }
-        return null;
+        return instance;
     }
 
     private T createEmptyInstance() {
